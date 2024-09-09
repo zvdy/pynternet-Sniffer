@@ -1,0 +1,5 @@
+feat: Dynamically create log file name with timestamp
+
+- Updated the log file name to include a timestamp, making it dynamically generated as `network_activity_<timestamp>.log`.
+- Added the [`datetime`] module to generate the current timestamp.
+- Modified the [`logging.basicConfig`] to use the dynamically generated log file name.
