@@ -19,7 +19,7 @@ Pynternet Sniffer is a Python script that monitors network activity, logs the ac
 
 1. **Clone the repository**:
     ```sh
-    git clone https://github.com/yourusername/pynternet-sniffer.git
+    git clone https://github.com/zvdy/pynternet-sniffer.git
     cd pynternet-sniffer
     ```
 
@@ -69,14 +69,3 @@ Check the [`network_activity.log`] file for logged network activity.
 ## License
 
 This project is licensed under the MIT License. See the LICENSE file for details.
-```
-
-### Explanation
-- **Features**: Lists the main features of the script.
-- **Requirements**: Specifies the required Python version and libraries.
-- **Installation**: Provides step-by-step instructions to set up the project.
-- **Usage**: Explains how to run the script, generate network activity, and check the log file.
-- **Example**: Provides an example of running the script and generating network activity.
-- **License**: Mentions the license under which the project is distributed.
-
-Save this content in a file named `README.md` in your project directory.
