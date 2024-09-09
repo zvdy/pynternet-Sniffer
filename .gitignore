@@ -1,2 +1,4 @@
 venv/*
-network_activity.log
+
+# Ignore all .log files
+*.log
