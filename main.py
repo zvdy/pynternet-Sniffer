@@ -13,7 +13,11 @@ from datetime import datetime
 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 log_file = f'network_activity_{timestamp}.log'
 
-logging.basicConfig(filename=log_file, level=logging.DEBUG, format='%(asctime)s - %(message)s')
+# Set up logging to file and console
+logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(message)s', handlers=[
+    logging.FileHandler(log_file),
+    logging.StreamHandler(sys.stdout)
+])
 
 def is_valid_ip(ip):
     """
@@ -78,49 +82,45 @@ def get_local_mac(ip):
                         return addr.address
     return None
 
-def monitor_network_activity(log_file, log_to_terminal):
+def monitor_network_activity(log_to_terminal):
     """
     Monitor network activity and log it to a file and optionally to the terminal.
     """
     permission_error_count = 0
     max_permission_errors = 5
 
-    with open(log_file, 'a') as f:
-        while True:
-            try:
-                logging.debug("Fetching network connections...")
-                connections = psutil.net_connections(kind='inet')
-                for conn in connections:
-                    if conn.status == 'ESTABLISHED':
-                        local_ip = conn.laddr.ip
-                        local_mac = get_local_mac(local_ip)
-                        remote_ip = conn.raddr.ip if conn.raddr else 'N/A'
-                        remote_port = conn.raddr.port if conn.raddr else 'N/A'
-                        logging.debug(f"Established connection found: Local IP: {local_ip}, Local MAC: {local_mac}, Remote IP: {remote_ip}, Remote Port: {remote_port}")
-                        devices = get_ip_mac_creator(remote_ip)
-                        for device in devices:
-                            log_entry = f"Local IP: {local_ip}, Local MAC: {local_mac}, Remote IP: {remote_ip}, Remote Port: {remote_port}, Remote MAC: {device['mac']}\n"
-                            f.write(log_entry)
-                            if log_to_terminal:
-                                print(log_entry.strip())
-                            logging.debug(f"Logged entry: {log_entry.strip()}")
-                time.sleep(5)  # Adjust the sleep time as needed
+    while True:
+        try:
+            logging.debug("Fetching network connections...")
+            connections = psutil.net_connections(kind='inet')
+            for conn in connections:
+                if conn.status == 'ESTABLISHED':
+                    local_ip = conn.laddr.ip
+                    local_mac = get_local_mac(local_ip)
+                    remote_ip = conn.raddr.ip if conn.raddr else 'N/A'
+                    remote_port = conn.raddr.port if conn.raddr else 'N/A'
+                    logging.debug(f"Established connection found: Local IP: {local_ip}, Local MAC: {local_mac}, Remote IP: {remote_ip}, Remote Port: {remote_port}")
+                    devices = get_ip_mac_creator(remote_ip)
+                    for device in devices:
+                        log_entry = f"Local IP: {local_ip}, Local MAC: {local_mac}, Remote IP: {remote_ip}, Remote Port: {remote_port}, Remote MAC: {device['mac']}"
+                        logging.info(log_entry)
+            time.sleep(5)  # Adjust the sleep time as needed
 
-                # Check for exit signal
-                if sys.stdin in select.select([sys.stdin], [], [], 0)[0]:
-                    key = sys.stdin.read(1)
-                    if key == 'q' or key == '\x1b':  # 'q' or 'Esc'
-                        logging.info("Exiting...")
-                        break
-
-                permission_error_count = 0  # Reset the count if no error occurs
-
-            except PermissionError as e:
-                logging.error(f"PermissionError: {e}")
-                permission_error_count += 1
-                if permission_error_count >= max_permission_errors:
-                    logging.error("Too many PermissionErrors. Exiting...")
+            # Check for exit signal
+            if sys.stdin in select.select([sys.stdin], [], [], 0)[0]:
+                key = sys.stdin.read(1)
+                if key == 'q' or key == '\x1b':  # 'q' or 'Esc'
+                    logging.info("Exiting...")
                     break
+
+            permission_error_count = 0  # Reset the count if no error occurs
+
+        except PermissionError as e:
+            logging.error(f"PermissionError: {e}")
+            permission_error_count += 1
+            if permission_error_count >= max_permission_errors:
+                logging.error("Too many PermissionErrors. Exiting...")
+                break
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Monitor network activity and log it.")
@@ -129,4 +129,4 @@ if __name__ == "__main__":
 
     print("Press 'q' or 'Esc' to exit.")
     logging.info("Starting network activity monitoring...")
-    monitor_network_activity(log_file, args.terminal)
+    monitor_network_activity(args.terminal)
