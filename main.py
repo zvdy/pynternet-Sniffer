@@ -13,10 +13,9 @@ from datetime import datetime
 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 log_file = f'network_activity_{timestamp}.log'
 
-# Set up logging to file and console
+# Set up logging to file
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(message)s', handlers=[
-    logging.FileHandler(log_file),
-    logging.StreamHandler(sys.stdout)
+    logging.FileHandler(log_file)
 ])
 
 def is_valid_ip(ip):
@@ -74,20 +73,26 @@ def get_local_mac(ip):
     """
     Get the MAC address of the local machine for the given IP.
     """
-    for addrs in psutil.net_if_addrs().values():
-        for addr in addrs:
-            if addr.family == socket.AF_INET and addr.address == ip:
+    try:
+        ip_obj = ipaddress.ip_address(ip)
+        if ip_obj.version == 4:
+            for addrs in psutil.net_if_addrs().values():
                 for addr in addrs:
-                    if addr.family == psutil.AF_LINK:
-                        return addr.address
+                    if addr.family == socket.AF_INET and addr.address == ip:
+                        for addr in addrs:
+                            if addr.family == psutil.AF_LINK:
+                                return addr.address
+    except ValueError:
+        logging.error(f"Invalid IP address: {ip}")
     return None
 
-def monitor_network_activity(log_to_terminal):
+def monitor_network_activity(log_to_terminal, mac_address_only):
     """
     Monitor network activity and log it to a file and optionally to the terminal.
     """
     permission_error_count = 0
     max_permission_errors = 5
+    logged_local_macs = set()
 
     while True:
         try:
@@ -97,13 +102,15 @@ def monitor_network_activity(log_to_terminal):
                 if conn.status == 'ESTABLISHED':
                     local_ip = conn.laddr.ip
                     local_mac = get_local_mac(local_ip)
+                    if mac_address_only and local_mac in logged_local_macs:
+                        continue
+                    logged_local_macs.add(local_mac)
                     remote_ip = conn.raddr.ip if conn.raddr else 'N/A'
                     remote_port = conn.raddr.port if conn.raddr else 'N/A'
-                    logging.debug(f"Established connection found: Local IP: {local_ip}, Local MAC: {local_mac}, Remote IP: {remote_ip}, Remote Port: {remote_port}")
-                    devices = get_ip_mac_creator(remote_ip)
-                    for device in devices:
-                        log_entry = f"Local IP: {local_ip}, Local MAC: {local_mac}, Remote IP: {remote_ip}, Remote Port: {remote_port}, Remote MAC: {device['mac']}"
-                        logging.info(log_entry)
+                    log_entry = f"Local IP: {local_ip}, Local MAC: {local_mac}, Remote IP: {remote_ip}, Remote Port: {remote_port}"
+                    logging.info(log_entry)
+                    if log_to_terminal:
+                        print(log_entry)
             time.sleep(5)  # Adjust the sleep time as needed
 
             # Check for exit signal
@@ -121,12 +128,23 @@ def monitor_network_activity(log_to_terminal):
             if permission_error_count >= max_permission_errors:
                 logging.error("Too many PermissionErrors. Exiting...")
                 break
-
+        except Exception as e:
+            logging.error(f"Error: {e}")
+            break
+        
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Monitor network activity and log it.")
     parser.add_argument('-t', '--terminal', action='store_true', help="Log activity to the terminal as well as to the file")
+    parser.add_argument('-m', '--mac-address-only', action='store_true', help="Log only the first request of each MAC address")
     args = parser.parse_args()
+
+    if args.terminal:
+        # Add console handler if terminal logging is enabled
+        console_handler = logging.StreamHandler(sys.stdout)
+        console_handler.setLevel(logging.DEBUG)
+        console_handler.setFormatter(logging.Formatter('%(asctime)s - %(message)s'))
+        logging.getLogger().addHandler(console_handler)
 
     print("Press 'q' or 'Esc' to exit.")
     logging.info("Starting network activity monitoring...")
-    monitor_network_activity(args.terminal)
+    monitor_network_activity(args.terminal, args.mac_address_only)
