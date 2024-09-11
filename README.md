@@ -5,9 +5,12 @@ Pynternet Sniffer is a Python script that monitors network activity, logs the ac
 ## Features
 
 - Monitors network connections and logs established connections.
-- Retrieves IP and MAC addresses using ARP requests.
-- Logs network activity to a file.
+- Retrieves IP and MAC addresses using ARP requests for IPv4 and ICMPv6 for IPv6.
+- Logs network activity to a timestamped log file.
+- Optionally logs network activity to the terminal.
 - Gracefully exits on pressing 'q' or 'Esc'.
+- Validates IP addresses before processing.
+- Logs only the first request of each MAC address if specified.
 
 ## Requirements
 
@@ -47,15 +50,32 @@ Pynternet Sniffer is a Python script that monitors network activity, logs the ac
     ```
 
 3. **Check the log file**:
-    The network activity will be logged in `network_activity.log`.
+    The network activity will be logged in a file named `network_activity_<timestamp>.log`.
 
 4. **Exit the script**:
     Press 'q' or 'Esc' to gracefully exit the script.
 
+### Additional Options
+
+- **Log activity to the terminal**:
+    ```sh
+    sudo python3 main.py -t
+    ```
+
+- **Log only the first request of each MAC address**:
+    ```sh
+    sudo python3 main.py -m
+    ```
+
+- **Combine options**:
+    ```sh
+    sudo python3 main.py -t -m
+    ```
+
 ## Example
 
 ```sh
-sudo python3 main.py
+sudo python3 main.py -t
 ```
 
 In another terminal:
@@ -64,8 +84,7 @@ In another terminal:
 ping -c 4 google.com
 ```
 
-Check the [`network_activity.log`] file for logged network activity.
+Check the `network_activity<timestamp>.log` file for logged network activity
 
-## License
-
-This project is licensed under the MIT License. See the LICENSE file for details.
+### License
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
