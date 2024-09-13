@@ -1,103 +1,28 @@
-import psutil
-from scapy.all import ARP, Ether, srp, conf, IPv6, ICMPv6ND_NS, ICMPv6NDOptSrcLLAddr
-import time
-import logging
 import sys
 import select
-import ipaddress
+import time
 import argparse
-import socket
-from datetime import datetime
+import logging
+from network_scanner import scan_network, get_local_mac, fetch_network_connections
+from mac_manufacturer import add_mac_manufacturer
+from logger import setup_logging
 
-# Generate a timestamped log file name
-timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-log_file = f'network_activity_{timestamp}.log'
-
-# Set up logging to file
-logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(message)s', handlers=[
-    logging.FileHandler(log_file)
-])
-
-def is_valid_ip(ip):
-    """
-    Validate the given IP address.
-    """
-    try:
-        ipaddress.ip_address(ip)
-        return True
-    except ValueError:
-        return False
-
-def get_ip_mac_creator(ip):
-    """
-    Get the MAC address and creator of a given IP using ARP for IPv4 and ICMPv6 for IPv6.
-    """
-    if not is_valid_ip(ip):
-        logging.error(f"Invalid IP address: {ip}")
-        return []
-
-    try:
-        ip_obj = ipaddress.ip_address(ip)
-        if ip_obj.version == 4:
-            # Create an ARP request packet
-            arp_request = ARP(pdst=ip)
-            broadcast = Ether(dst="ff:ff:ff:ff:ff:ff")
-            arp_request_broadcast = broadcast / arp_request
-
-            # Send the packet and get the response
-            answered_list = srp(arp_request_broadcast, timeout=1, verbose=False)[0]
-
-            devices = []
-            for _, received in answered_list:
-                devices.append({'ip': received.psrc, 'mac': received.hwsrc})
-
-            return devices
-        elif ip_obj.version == 6:
-            # Create an ICMPv6 Neighbor Solicitation packet
-            ns = IPv6(dst=ip)/ICMPv6ND_NS(tgt=ip)/ICMPv6NDOptSrcLLAddr(lladdr=conf.iface.mac)
-            answered_list = srp(ns, timeout=1, verbose=False)[0]
-
-            devices = []
-            for _, received in answered_list:
-                devices.append({'ip': received[IPv6].src, 'mac': received[ICMPv6NDOptSrcLLAddr].lladdr})
-
-            return devices
-    except PermissionError as e:
-        logging.error(f"PermissionError: {e}")
-        return []
-    except Exception as e:
-        logging.error(f"Error: {e}")
-        return []
-
-def get_local_mac(ip):
-    """
-    Get the MAC address of the local machine for the given IP.
-    """
-    try:
-        ip_obj = ipaddress.ip_address(ip)
-        if ip_obj.version == 4:
-            for addrs in psutil.net_if_addrs().values():
-                for addr in addrs:
-                    if addr.family == socket.AF_INET and addr.address == ip:
-                        for addr in addrs:
-                            if addr.family == psutil.AF_LINK:
-                                return addr.address
-    except ValueError:
-        logging.error(f"Invalid IP address: {ip}")
-    return None
-
-def monitor_network_activity(log_to_terminal, mac_address_only):
+def monitor_network_activity(log_to_terminal, mac_address_only, ip_range):
     """
     Monitor network activity and log it to a file and optionally to the terminal.
     """
     permission_error_count = 0
     max_permission_errors = 5
     logged_local_macs = set()
+    discovered_devices = set()
+
+    logging.info("Scanning the local network for devices...")  # Print this message only once
+    logging.debug("Fetching network connections...")  # Print this message only once
 
     while True:
         try:
-            logging.debug("Fetching network connections...")
-            connections = psutil.net_connections(kind='inet')
+            connections = fetch_network_connections()
+            log_entries = []
             for conn in connections:
                 if conn.status == 'ESTABLISHED':
                     local_ip = conn.laddr.ip
@@ -108,9 +33,21 @@ def monitor_network_activity(log_to_terminal, mac_address_only):
                     remote_ip = conn.raddr.ip if conn.raddr else 'N/A'
                     remote_port = conn.raddr.port if conn.raddr else 'N/A'
                     log_entry = f"Local IP: {local_ip}, Local MAC: {local_mac}, Remote IP: {remote_ip}, Remote Port: {remote_port}"
+                    log_entries.append(log_entry)
                     logging.info(log_entry)
                     if log_to_terminal:
                         print(log_entry)
+            
+            # Scan the network for devices
+            scan_network(ip_range, discovered_devices)
+
+            # Add MAC manufacturer information to log entries
+            updated_log_entries = add_mac_manufacturer(log_entries)
+            for entry in updated_log_entries:
+                logging.info(entry)
+                if log_to_terminal:
+                    print(entry)
+
             time.sleep(5)  # Adjust the sleep time as needed
 
             # Check for exit signal
@@ -136,15 +73,11 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Monitor network activity and log it.")
     parser.add_argument('-t', '--terminal', action='store_true', help="Log activity to the terminal as well as to the file")
     parser.add_argument('-m', '--mac-address-only', action='store_true', help="Log only the first request of each MAC address")
+    parser.add_argument('-r', '--range', type=str, default="192.168.1.1/24", help="IP range to scan for devices")
     args = parser.parse_args()
 
-    if args.terminal:
-        # Add console handler if terminal logging is enabled
-        console_handler = logging.StreamHandler(sys.stdout)
-        console_handler.setLevel(logging.DEBUG)
-        console_handler.setFormatter(logging.Formatter('%(asctime)s - %(message)s'))
-        logging.getLogger().addHandler(console_handler)
+    setup_logging(args.terminal)
 
     print("Press 'q' or 'Esc' to exit.")
     logging.info("Starting network activity monitoring...")
-    monitor_network_activity(args.terminal, args.mac_address_only)
+    monitor_network_activity(args.terminal, args.mac_address_only, args.range)
