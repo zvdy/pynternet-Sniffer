@@ -55,7 +55,7 @@ def get_ip_mac_creator(ip):
     except PermissionError as e:
         logging.error("PermissionError: %s", e)
         return []
-    except Exception as e:
+    except (KeyError, ValueError) as e:
         logging.error("Error: %s", e)
         return []
 

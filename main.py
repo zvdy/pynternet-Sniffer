@@ -72,7 +72,7 @@ def monitor_network_activity(log_to_terminal, mac_address_only, ip_range):
             if permission_error_count >= max_permission_errors:
                 logging.error("Too many PermissionErrors. Exiting...")
                 break
-        except Exception as e:
+        except (KeyError, ValueError) as e:
             logging.error("Error: %s", e)
             break
         
