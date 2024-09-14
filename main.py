@@ -26,25 +26,9 @@ def monitor_network_activity(log_to_terminal, mac_address_only, ip_range):
     while True:
         try:
             connections = fetch_network_connections()
-            log_entries = []
-            for conn in connections:
-                if conn.status == 'ESTABLISHED':
-                    local_ip = conn.laddr.ip
-                    local_mac = get_local_mac(local_ip)
-                    if mac_address_only and local_mac in logged_local_macs:
-                        continue
-                    logged_local_macs.add(local_mac)
-                    remote_ip = conn.raddr.ip if conn.raddr else 'N/A'
-                    remote_port = conn.raddr.port if conn.raddr else 'N/A'
-                    log_entry = (
-                        f"Local IP: {local_ip}, Local MAC: {local_mac}, "
-                        f"Remote IP: {remote_ip}, Remote Port: {remote_port}"
-                    )
-                    log_entries.append(log_entry)
-                    logging.info(log_entry)
-                    if log_to_terminal:
-                        print(log_entry)
-            
+            log_entries = process_connections(
+                connections, logged_local_macs, mac_address_only, log_to_terminal
+            )            
             # Scan the network for devices
             scan_network(ip_range, discovered_devices)
 
@@ -75,12 +59,45 @@ def monitor_network_activity(log_to_terminal, mac_address_only, ip_range):
         except (KeyError, ValueError) as e:
             logging.error("Error: %s", e)
             break
-        
+
+def process_connections(connections, logged_local_macs, mac_address_only, log_to_terminal):
+    """
+    Process network connections and return log entries.
+    """
+    log_entries = []
+    for conn in connections:
+        if conn.status == 'ESTABLISHED':
+            local_ip = conn.laddr.ip
+            local_mac = get_local_mac(local_ip)
+            if mac_address_only and local_mac in logged_local_macs:
+                continue
+            logged_local_macs.add(local_mac)
+            remote_ip = conn.raddr.ip if conn.raddr else 'N/A'
+            remote_port = conn.raddr.port if conn.raddr else 'N/A'
+            log_entry = (
+                f"Local IP: {local_ip}, Local MAC: {local_mac}, "
+                f"Remote IP: {remote_ip}, Remote Port: {remote_port}"
+            )
+            log_entries.append(log_entry)
+            logging.info(log_entry)
+            if log_to_terminal:
+                print(log_entry)
+    return log_entries
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Monitor network activity and log it.")
-    parser.add_argument('-t', '--terminal', action='store_true', help="Log activity to the terminal as well as to the file")
-    parser.add_argument('-m', '--mac-address-only', action='store_true', help="Log only the first request of each MAC address")
-    parser.add_argument('-r', '--range', type=str, default="192.168.1.1/24", help="IP range to scan for devices")
+    parser.add_argument(
+        '-t', '--terminal', action='store_true', 
+        help="Log activity to the terminal as well as to the file"
+    )
+    parser.add_argument(
+        '-m', '--mac-address-only', action='store_true', 
+        help="Log only the first request of each MAC address"
+    )
+    parser.add_argument(
+        '-r', '--range', type=str, default="192.168.1.1/24", 
+        help="IP range to scan for devices"
+    )
     args = parser.parse_args()
 
     setup_logging(args.terminal)
@@ -88,3 +105,4 @@ if __name__ == "__main__":
     print("Press 'q' or 'Esc' to exit.")
     logging.info("Starting network activity monitoring...")
     monitor_network_activity(args.terminal, args.mac_address_only, args.range)
+    logging.info("Network activity monitoring stopped.")
