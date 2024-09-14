@@ -1,3 +1,7 @@
+"""
+MAC manufacturer lookup module.
+"""
+
 import re
 from mac_vendor_lookup import MacLookup
 

@@ -1,3 +1,7 @@
+"""
+Main module for network activity monitoring.
+"""
+
 import sys
 import select
 import time
@@ -32,7 +36,10 @@ def monitor_network_activity(log_to_terminal, mac_address_only, ip_range):
                     logged_local_macs.add(local_mac)
                     remote_ip = conn.raddr.ip if conn.raddr else 'N/A'
                     remote_port = conn.raddr.port if conn.raddr else 'N/A'
-                    log_entry = f"Local IP: {local_ip}, Local MAC: {local_mac}, Remote IP: {remote_ip}, Remote Port: {remote_port}"
+                    log_entry = (
+                        f"Local IP: {local_ip}, Local MAC: {local_mac}, "
+                        f"Remote IP: {remote_ip}, Remote Port: {remote_port}"
+                    )
                     log_entries.append(log_entry)
                     logging.info(log_entry)
                     if log_to_terminal:
@@ -53,20 +60,20 @@ def monitor_network_activity(log_to_terminal, mac_address_only, ip_range):
             # Check for exit signal
             if sys.stdin in select.select([sys.stdin], [], [], 0)[0]:
                 key = sys.stdin.read(1)
-                if key == 'q' or key == '\x1b':  # 'q' or 'Esc'
+                if key in {'q', '\x1b'}:  # 'q' or 'Esc'
                     logging.info("Exiting...")
                     break
 
             permission_error_count = 0  # Reset the count if no error occurs
 
         except PermissionError as e:
-            logging.error(f"PermissionError: {e}")
+            logging.error("PermissionError: %s", e)
             permission_error_count += 1
             if permission_error_count >= max_permission_errors:
                 logging.error("Too many PermissionErrors. Exiting...")
                 break
         except Exception as e:
-            logging.error(f"Error: {e}")
+            logging.error("Error: %s", e)
             break
         
 if __name__ == "__main__":

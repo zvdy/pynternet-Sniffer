@@ -1,8 +1,12 @@
-import psutil
-from scapy.all import ARP, Ether, srp, conf, IPv6, ICMPv6ND_NS, ICMPv6NDOptSrcLLAddr
+"""
+Network scanner module.
+"""
+
 import ipaddress
 import socket
 import logging
+import psutil
+from scapy.all import ARP, Ether, srp, conf, IPv6, ICMPv6ND_NS, ICMPv6NDOptSrcLLAddr
 
 def is_valid_ip(ip):
     """
@@ -19,7 +23,7 @@ def get_ip_mac_creator(ip):
     Get the MAC address and creator of a given IP using ARP for IPv4 and ICMPv6 for IPv6.
     """
     if not is_valid_ip(ip):
-        logging.error(f"Invalid IP address: {ip}")
+        logging.error("Invalid IP address: %s", ip)
         return []
 
     try:
@@ -38,7 +42,7 @@ def get_ip_mac_creator(ip):
                 devices.append({'ip': received.psrc, 'mac': received.hwsrc})
 
             return devices
-        elif ip_obj.version == 6:
+        if ip_obj.version == 6:
             # Create an ICMPv6 Neighbor Solicitation packet
             ns = IPv6(dst=ip)/ICMPv6ND_NS(tgt=ip)/ICMPv6NDOptSrcLLAddr(lladdr=conf.iface.mac)
             answered_list = srp(ns, timeout=1, verbose=False)[0]
@@ -49,10 +53,10 @@ def get_ip_mac_creator(ip):
 
             return devices
     except PermissionError as e:
-        logging.error(f"PermissionError: {e}")
+        logging.error("PermissionError: %s", e)
         return []
     except Exception as e:
-        logging.error(f"Error: {e}")
+        logging.error("Error: %s", e)
         return []
 
 def get_local_mac(ip):
@@ -69,7 +73,7 @@ def get_local_mac(ip):
                             if addr.family == psutil.AF_LINK:
                                 return addr.address
     except ValueError:
-        logging.error(f"Invalid IP address: {ip}")
+        logging.error("Invalid IP address: %s", ip)
     return None
 
 def scan_network(ip_range, discovered_devices):
@@ -87,7 +91,7 @@ def scan_network(ip_range, discovered_devices):
         if device not in discovered_devices:
             discovered_devices.add(device)
             devices.append({'ip': received.psrc, 'mac': received.hwsrc})
-            logging.info(f"Discovered device - IP: {received.psrc}, MAC: {received.hwsrc}")
+            logging.info("Discovered device - IP: %s, MAC: %s", received.psrc, received.hwsrc)
 
     return devices
 
