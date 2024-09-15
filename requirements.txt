@@ -1,3 +1,5 @@
 scapy
 psutil
 mac-vendor-lookup
+pylint
+anybadge

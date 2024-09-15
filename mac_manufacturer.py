@@ -1,3 +1,7 @@
+"""
+MAC manufacturer lookup module.
+"""
+
 import re
 from mac_vendor_lookup import MacLookup
 
@@ -25,7 +29,7 @@ def add_mac_manufacturer(log_entries):
             mac_str = ''.join(mac)
             try:
                 manufacturer = mac_lookup.lookup(mac_str)
-            except Exception:
+            except (KeyError, ValueError):
                 manufacturer = 'Unknown'
             entry = entry.replace(mac_str, f'{mac_str} ({manufacturer})')
         updated_log_entries.append(entry)

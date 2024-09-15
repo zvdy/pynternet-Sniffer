@@ -1,5 +1,7 @@
 # Pynternet Sniffer
 
+![pylint](pylint.svg)
+
 Pynternet Sniffer is a Python script that monitors network activity, logs the activities, and retrieves IP, MAC, and creator information using the ARP protocol.
 
 ## Features
