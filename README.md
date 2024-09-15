@@ -136,5 +136,5 @@ The `filter.sh` script lists available network activity log files, prompts the u
     - [`dump/local_ip_mac.txt`] will contain unique local IP and MAC addresses.
     - [`dump/remote_ip.txt`] will contain unique remote IP addresses.
 
-## License
-This project is licensed under the MIT License. See the [`LICENSE`] file for details.
+### License
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
