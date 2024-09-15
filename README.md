@@ -1,6 +1,6 @@
 # Pynternet Sniffer
 
-![pylint](pylint.svg)
+![pylint](pylint.svg) ![py-ver](https://img.shields.io/badge/Python-3.12-blue)  [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 Pynternet Sniffer is a Python script that monitors network activity, logs the activities, and retrieves IP, MAC, and creator information using the ARP protocol.
 
@@ -13,12 +13,14 @@ Pynternet Sniffer is a Python script that monitors network activity, logs the ac
 - Gracefully exits on pressing 'q' or 'Esc'.
 - Validates IP addresses before processing.
 - Logs only the first request of each MAC address if specified.
+- Scans the local network for devices within a specified IP range.
+- Adds MAC manufacturer information to log entries.
 
 ## Requirements
 
 - Python 3.x
-- `psutil` library
-- `scapy` library
+- [`psutil`] library
+- [`scapy`] library
 
 ## Installation
 
@@ -43,10 +45,14 @@ Pynternet Sniffer is a Python script that monitors network activity, logs the ac
 
 1. **Run the script with elevated privileges**:
     ```sh
-    sudo python3 main.py
+    sudo /venv/bin/python main.py
+
+    # or
+
+    sudo python main.py
     ```
 
-2. **Generate network activity** (e.g., using `ping`):
+2. **Generate network activity** (e.g., using [`ping`]):
     ```sh
     ping -c 4 google.com
     ```
@@ -69,9 +75,14 @@ Pynternet Sniffer is a Python script that monitors network activity, logs the ac
     sudo python3 main.py -m
     ```
 
+- **Specify IP range to scan for devices**:
+    ```sh
+    sudo python3 main.py -r 192.168.1.1/24
+    ```
+
 - **Combine options**:
     ```sh
-    sudo python3 main.py -t -m
+    sudo python3 main.py -t -m -r 192.168.1.1/24
     ```
 
 ## Example
@@ -86,7 +97,44 @@ In another terminal:
 ping -c 4 google.com
 ```
 
-Check the `network_activity<timestamp>.log` file for logged network activity
+Check the `network_activity<timestamp>.log` file for logged network activity.
 
-### License
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
+## Additional Scripts
+
+### `who.sh`
+
+The `who.sh` script processes a list of IP addresses from an input file and retrieves information about each IP using the `whois` command. The results are saved to an output file.
+
+#### Usage
+
+1. **Ensure the input file [`dump/remote_ip.txt`] exists**:
+    This file should contain a list of IP addresses, one per line.
+
+2. **Run the script**:
+    ```sh
+    ./scripts/who.sh
+    ```
+
+3. **Check the output file**:
+    The information for each IP will be saved in [`dump/remote-info.txt`].
+
+### `filter.sh`
+
+The `filter.sh` script lists available network activity log files, prompts the user to select one, and then extracts unique local IP/MAC addresses and remote IP addresses from the selected log file. The results are saved in separate files.
+
+#### Usage
+
+1. **Run the script**:
+    ```sh
+    ./scripts/filter.sh
+    ```
+
+2. **Follow the prompts**:
+    Select the log file you want to process from the list.
+
+3. **Check the output files**:
+    - [`dump/local_ip_mac.txt`] will contain unique local IP and MAC addresses.
+    - [`dump/remote_ip.txt`] will contain unique remote IP addresses.
+
+## License
+This project is licensed under the MIT License. See the [`LICENSE`] file for details.

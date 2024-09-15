@@ -25,10 +25,13 @@ if [[ ! -f "$LOG_FILE" ]]; then
   exit 1
 fi
 
+# Create dump directory if it doesn't exist
+mkdir -p dump
+
 # Extract unique Local IP and Local MAC addresses
-grep -oP 'Local IP: \K[^,]+, Local MAC: [^,]+' "$LOG_FILE" | sort | uniq > local_ip_mac.txt
+grep -oP 'Local IP: \K[^,]+, Local MAC: [^,]+' "$LOG_FILE" | sort | uniq > dump/local_ip_mac.txt
 
 # Extract unique Remote IP addresses
-grep -oP 'Remote IP: \K[^,]+' "$LOG_FILE" | sort | uniq > remote_ip.txt
+grep -oP 'Remote IP: \K[^,]+' "$LOG_FILE" | sort | uniq > dump/remote_ip.txt
 
-echo "Extraction complete. Check local_ip_mac.txt and remote_ip.txt for results."
+echo "Extraction complete. Check dump/local_ip_mac.txt and dump/remote_ip.txt for results."
