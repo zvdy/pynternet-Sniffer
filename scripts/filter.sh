@@ -26,4 +26,9 @@ if [[ ! -f "$LOG_FILE" ]]; then
 fi
 
 # Extract unique Local IP and Local MAC addresses
-grep -oP 'Local IP: \K[^,]+, Local MAC: [^,]+' "$LOG_FILE" | sort | uniq
+grep -oP 'Local IP: \K[^,]+, Local MAC: [^,]+' "$LOG_FILE" | sort | uniq > local_ip_mac.txt
+
+# Extract unique Remote IP addresses
+grep -oP 'Remote IP: \K[^,]+' "$LOG_FILE" | sort | uniq > remote_ip.txt
+
+echo "Extraction complete. Check local_ip_mac.txt and remote_ip.txt for results."
