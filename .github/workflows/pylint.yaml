@@ -21,11 +21,28 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
+          pip install pylint anybadge
+
       - name: Analysing the code with pylint
         run: |
-          pylint $(git ls-files '*.py') --output=lint.txt || true
-      - name: Upload Artifact
+          pylint $(git ls-files '*.py') > pylint_output.txt || true
+
+      - name: Print pylint_output.txt
+        run: |
+          cat pylint_output.txt
+
+      - name: Generate pylint badge
+        run: |
+          score=$(grep 'Your code has been rated at' pylint_output.txt | awk '{print $7}' | cut -d'/' -f1)
+          anybadge -l pylint -v $score -f pylint.svg 2=red 4=orange 8=yellow 10=green
+
+      - name: Upload Artifacts
         uses: actions/upload-artifact@v3
         with:
-          name: lint.txt
-          path: lint.txt
+          name: pylint_output.txt
+          path: pylint_output.txt
+      - name: Upload Badge
+        uses: actions/upload-artifact@v3
+        with:
+          name: pylint.svg
+          path: pylint.svg
