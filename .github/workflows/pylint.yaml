@@ -25,23 +25,22 @@ jobs:
 
       - name: Analysing the code with pylint
         run: |
-          pylint $(git ls-files '*.py') --output=lint.txt || true
+          pylint $(git ls-files '*.py') > pylint_output.txt || true
 
-      - name: Print lint.txt
+      - name: Print pylint_output.txt
         run: |
-          cat lint.txt
+          cat pylint_output.txt
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v3
         with:
-          name: lint.txt
-          path: lint.txt
+          name: pylint_output.txt
+          path: pylint_output.txt
 
       - name: PyLint with dynamic badge
         uses: Silleellie/pylint-github-action@v2
         with:
-          lint-path: |
-            .
+          lint-path: pylint_output.txt
           python-version: 3.12
           requirements-path: requirements.txt
           readme-path: README.md
