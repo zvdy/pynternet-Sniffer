@@ -33,8 +33,8 @@ jobs:
 
       - name: Generate pylint badge
         run: |
-          score=$(grep 'Your code has been rated at' pylint_output.txt | grep -o '[0-9]*\.[0-9]*')
-          anybadge --value=$score --file=pylint.svg pylint
+          score=$(grep 'Your code has been rated at' pylint_output.txt | grep -o '[0-9]*\.[0-9]*' | head -1)
+          anybadge --value=$score --file=pylint.svg -o pylint
 
       - name: Update README with badge
         run: |
@@ -48,6 +48,8 @@ jobs:
           git add README.md pylint.svg
           git commit -m "Update README with pylint badge"
           git push
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v3
