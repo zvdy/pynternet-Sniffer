@@ -36,22 +36,6 @@ jobs:
           score=$(grep 'Your code has been rated at' pylint_output.txt | grep -o '[0-9]*\.[0-9]*' | head -1)
           anybadge --value=$score --file=pylint.svg -o pylint
 
-      - name: Update README with badge
+      - name: Print the svg badge
         run: |
-          if grep -q "![pylint](pylint.svg)" README.md; then
-            sed -i 's|!\[pylint\](pylint.svg)|![pylint](pylint.svg)|' README.md
-          else
-            echo '![pylint](pylint.svg)' >> README.md
-          fi
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git remote set-url origin https://x-access-token:${{ secrets.GH_TOKEN }}@github.com/${{ github.repository }}.git
-          git add README.md pylint.svg
-          git commit -m "Update README with pylint badge"
-          git push
-
-      - name: Upload Artifact
-        uses: actions/upload-artifact@v3
-        with:
-          name: pylint_output.txt
-          path: pylint_output.txt
+          cat pylint.svg
